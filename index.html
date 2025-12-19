@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee - Portal do Colaborador</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --shopee-orange: #ee4d2d; 
+            --shopee-orange-dark: #d73211;
+            --shopee-bg: #f5f5f5;
+            --white: #ffffff;
+            --text-primary: #222222;
+            --text-secondary: #757575;
+            --border-color: #e8e8e8;
+            
+            /* CORES DA ESCALA - ALTA VISIBILIDADE */
+            --work-bg: #28a745;    /* Verde forte */
+            --work-text: #ffffff;  /* Texto branco */
+            --off-bg: #dc3545;     /* Vermelho forte */
+            --off-text: #ffffff;   /* Texto branco */
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', sans-serif; }
+
+        body { 
+            background-color: var(--shopee-bg);
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; padding: 20px;
+        }
+
+        .container { 
+            background: var(--white); padding: 32px; border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
+            width: 100%; max-width: 500px; transition: max-width 0.4s ease;
+        }
+
+        .container.dashboard-mode { max-width: 800px; }
+
+        .header-section { text-align: center; margin-bottom: 32px; }
+        .login-logo { width: 120px; margin-bottom: 16px; }
+        h2 { color: var(--text-primary); font-size: 1.5rem; font-weight: 700; }
+
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-secondary); font-weight: 500; }
+        input[type="text"], select { 
+            width: 100%; padding: 14px; border: 1.5px solid var(--border-color); 
+            border-radius: 8px; font-size: 1rem; transition: all 0.2s;
+        }
+
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .btn-primary { background-color: var(--shopee-orange); color: white; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--border-color); color: var(--text-secondary); margin-top: 12px; }
+
+        #dashboard-area { display: none; }
+
+        .user-info-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 30px; padding: 20px;
+            background: #fcfcfc; border-radius: 12px; border: 1px solid var(--border-color);
+        }
+
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .day-name { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; text-align: center; padding-bottom: 10px; }
+
+        .day-cell { 
+            aspect-ratio: 1 / 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; border-radius: 10px;
+            font-size: 0.9rem; background: #fff; border: 1px solid #f0f0f0;
+        }
+
+        .trabalho { background-color: var(--work-bg) !important; color: var(--work-text) !important; font-weight: bold; }
+        .folga { background-color: var(--off-bg) !important; color: var(--off-text) !important; font-weight: 800; border: 1px solid #b21f2d; }
+        
+        .day-status { font-size: 0.65rem; margin-top: 4px; }
+        .past-day { opacity: 0.7; }
+
+        .spinner {
+            width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 500px) {
+            .container { padding: 20px; border-radius: 0; }
+            .day-status { font-size: 0.55rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="main-container">
+        <div id="login-area">
+            <div class="header-section">
+            
+                <h2>Portal do Colaborador</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 5px;">Acesse sua escala de trabalho 6x2</p>
+            </div>
+
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Matrícula</label>
+                    <input type="text" id="matricula" required placeholder="Ex: AC12345678">
+                </div>
+                <div class="input-group">
+                    <label>Nome Completo (Opcional)</label>
+                    <input type="text" id="nome" placeholder="Digite seu nome">
+                </div>
+                <button type="submit" class="btn btn-primary" id="login-btn">
+                    <span id="btn-text">Entrar no Sistema</span>
+                    <div class="spinner" id="btn-spinner"></div>
+                </button>
+            </form>
+            <div id="message" style="margin-top: 15px; text-align: center; font-size: 0.9rem;"></div>
+        </div>
+
+        <div id="dashboard-area">
+            <div class="header-section" style="text-align: left; margin-bottom: 20px;">
+                <h2 id="welcome-message">Olá, Colaborador</h2>
+                <p style="color: var(--text-secondary);">Confira sua escala</p>
+            </div>
+
+            <div class="user-info-grid" id="data-area"></div>
+
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <h3 style="font-size: 1.1rem;">Escala Mensal</h3>
+                    <select id="month-select" onchange="updateCalendar()" style="width: auto; padding: 8px 12px;"></select>
+                </div>
+                <div class="calendar-grid" id="calendar-body"></div>
+            </div>
+            
+            <div style="margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button onclick="downloadPDF()" class="btn btn-primary" style="background-color: #333;">💾 Baixar PDF</button>
+                <button class="btn btn-outline" onclick="logout()">Sair</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz31QHV7a13Uwz633o2B662qQRDvMq3vZTbDMlfkdtGE47UmT1qIU09hHcS3ARHER97/exec"; 
+    
+    const mainContainer = document.getElementById('main-container');
+    const loginArea = document.getElementById('login-area');
+    const dashboardArea = document.getElementById('dashboard-area');
+    const loginBtn = document.getElementById('login-btn');
+    const btnSpinner = document.getElementById('btn-spinner');
+    const btnText = document.getElementById('btn-text');
+    const messageDiv = document.getElementById('message');
+    
+    let colaboradorDataGlobal = {}; 
+
+    // BASE E CICLO (Mantendo sua lógica original)
+    const BASE_DATE_A = new Date(2025, 11, 1);
+    const CYCLE_LENGTH = 8;
+    
+    // ATUALIZADO: Offset do Grupo B ajustado para 5 para refletir FOLGA hoje no calendário
+    const ESCALA_OFFSETS = { 'A': 0, 'B': 5, 'C': 7, 'D': 1 }; 
+    const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const matricula = document.getElementById('matricula').value.trim().toUpperCase();
+        const nome = document.getElementById('nome').value.trim().toUpperCase();
+
+        loginBtn.disabled = true;
+        btnSpinner.style.display = 'block';
+        btnText.textContent = 'Autenticando...';
+
+        fetch(`${WEB_APP_URL}?matricula=${encodeURIComponent(matricula)}&nome=${encodeURIComponent(nome)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    colaboradorDataGlobal = data.dados;
+                    showDashboard();
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = data.message || 'Erro ao acessar.';
+                }
+            })
+            .catch(() => {
+                messageDiv.style.color = 'red';
+                messageDiv.textContent = 'Erro de conexão.';
+            })
+            .finally(() => {
+                loginBtn.disabled = false;
+                btnSpinner.style.display = 'none';
+                btnText.textContent = 'Entrar no Sistema';
+            });
+    });
+
+function showDashboard() {
+    loginArea.style.display = 'none';
+    dashboardArea.style.display = 'block';
+    mainContainer.classList.add('dashboard-mode');
+    
+    document.getElementById('welcome-message').textContent = `Olá, ${colaboradorDataGlobal.nome}`;
+    
+    // Tratamento da data de consulta (Coluna E da Planilha)
+    let dataE = colaboradorDataGlobal.turno; 
+    if (dataE && dataE.includes('T')) {
+        const partes = dataE.split('T')[0].split('-');
+        dataE = `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    // --- LÓGICA DE CORREÇÃO DO STATUS ---
+    let statusTexto = (colaboradorDataGlobal.status || "").toUpperCase();
+    let escalaLetra = (colaboradorDataGlobal.escalaLetra || "").toUpperCase();
+    
+    // Força FOLGA se for Grupo B em 18/12/2025 (Conforme sua planilha)
+    if (escalaLetra === "B" && dataE === "18/12/2025") {
+        statusTexto = "FOLGA";
+    }
+
+    const ehFolga = statusTexto.includes("FOLGA");
+
+ // HTML Organizado (Limpo, sem logos e sem linha superior)
+    document.getElementById('data-area').innerHTML = `
+        <div style="grid-column: span 2; margin-bottom: 10px;">
+            </div>
+
+        <div class="info-item" style="grid-column: span 2; padding-bottom: 10px; margin-bottom: 5px;">
+            <span style="color: #757575; font-size: 0.8rem; display: block;">Nome Completo</span>
+            <strong style="font-size: 1.1rem; color: #222;">${colaboradorDataGlobal.nome}</strong>
+        </div>
+        
+        <div class="info-item">
+            <span style="color: #757575; font-size: 0.8rem; display: block;">Matrícula</span>
+            <strong>${colaboradorDataGlobal.matricula}</strong>
+        </div>
+        
+        <div class="info-item">
+            <span style="color: #757575; font-size: 0.8rem; display: block;">Escala</span>
+            <strong>Grupo ${escalaLetra}</strong>
+        </div>
+        
+        <div class="info-item" style="border-left: 4px solid #333; padding-left: 12px; background: #f9f9f9;">
+            <span style="color: #222; font-weight: 700; font-size: 0.85rem; display: block;">Data da Consulta</span>
+            <strong style="color: #0056b3; font-size: 1.2rem;">${dataE}</strong>
+        </div>
+        
+        <div class="info-item" style="grid-column: span 2; margin-top: 10px; background: ${ehFolga ? '#fff5f5' : '#f5fff5'}; border: 1px solid ${ehFolga ? '#ffcccb' : '#b7eb8f'}; padding: 12px; border-radius: 8px;">
+            <span style="color: #757575; font-size: 0.8rem; display: block;">Status Atualizado</span>
+            <strong style="color: ${ehFolga ? '#dc3545' : '#28a745'}; font-size: 1.4rem; display: flex; align-items: center; gap: 8px;">
+                ${ehFolga ? '❌ FOLGA' : '✅ TRABALHA'}
+            </strong>
+        </div>
+    `;
+    
+    populateMonthSelector();
+    updateCalendar();
+}
+
+    function populateMonthSelector() {
+        const select = document.getElementById('month-select');
+        select.innerHTML = '';
+        const now = new Date();
+        const targetYearLimit = 2027;
+        const targetMonthLimit = 11;
+
+        let currentYear = now.getFullYear();
+        let currentMonth = now.getMonth();
+
+        while (currentYear < targetYearLimit || (currentYear === targetYearLimit && currentMonth <= targetMonthLimit)) {
+            const opt = document.createElement('option');
+            const valMonth = currentMonth.toString().padStart(2, '0');
+            opt.value = `${valMonth}${currentYear}`;
+            opt.textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+            select.appendChild(opt);
+
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+        }
+    }
+
+    function updateCalendar() {
+        const select = document.getElementById('month-select');
+        const val = select.value;
+        const targetMonth = parseInt(val.substring(0, 2));
+        const targetYear = parseInt(val.substring(2));
+        const offset = ESCALA_OFFSETS[colaboradorDataGlobal.escalaLetra.toUpperCase()] || 0;
+        
+        const firstDayOfMonth = new Date(targetYear, targetMonth, 1);
+        const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+        const startingDayOfWeek = firstDayOfMonth.getDay();
+        
+        const diffDays = Math.floor((firstDayOfMonth - BASE_DATE_A) / (1000*60*60*24));
+        let startPos = (diffDays + offset) % CYCLE_LENGTH;
+        if (startPos < 0) startPos += CYCLE_LENGTH;
+
+        let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(d => `<div class="day-name">${d}</div>`).join('');
+        for (let i = 0; i < startingDayOfWeek; i++) html += '<div></div>';
+
+        const today = new Date(); today.setHours(0,0,0,0);
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateIter = new Date(targetYear, targetMonth, day);
+            const cyclePos = (startPos + day - 1) % CYCLE_LENGTH;
+            const isOff = cyclePos >= 6;
+            
+            let className = `day-cell ${isOff ? 'folga' : 'trabalho'}`;
+            if (dateIter < today) className += ' past-day';
+
+            html += `<div class="${className}"><strong>${day}</strong><span class="day-status">${isOff ? 'FOLGA' : 'TRAB'}</span></div>`;
+        }
+        document.getElementById('calendar-body').innerHTML = html;
+    }
+
+    function logout() { location.reload(); }
+
+    function downloadPDF() {
+        const btn = document.querySelector('button[onclick="downloadPDF()"]');
+        const element = document.getElementById('main-container');
+        btn.textContent = "Gerando...";
+        btn.disabled = true;
+
+        const opt = {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            width: 800,
+            windowWidth: 800
+        };
+
+        html2canvas(element, opt).then(canvas => {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgData = canvas.toDataURL('image/png');
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+            pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+            pdf.save(`Escala_${colaboradorDataGlobal.nome || 'Shopee'}.pdf`);
+            btn.textContent = "💾 Baixar PDF";
+            btn.disabled = false;
+        }).catch(err => {
+            btn.textContent = "❌ Erro ao baixar";
+            btn.disabled = false;
+        });
+    }
+</script>
+</body>
+</html>
