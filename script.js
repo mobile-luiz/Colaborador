@@ -8,7 +8,7 @@ const btnSpinner = document.getElementById('btn-spinner');
 const btnText = document.getElementById('btn-text');
 const messageDiv = document.getElementById('message');
 
-let colaboradorDataGlobal = {}; 
+let colaboradorDataGlobal = {};
 let escalasBaseData = {};
 
 // CONFIGURAÇÃO
@@ -193,7 +193,8 @@ function populateMonthSelector() {
     select.innerHTML = '';
     const now = new Date();
 
-    for (let i = 0; i < 12; i++) {
+    // Mostrar os próximos 24 meses (2 anos)
+    for (let i = 0; i < 24; i++) {
         const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
         const opt = document.createElement('option');
         opt.value = `${date.getFullYear()}-${date.getMonth().toString().padStart(2, '0')}`;
@@ -205,7 +206,7 @@ function populateMonthSelector() {
         
         select.appendChild(opt);
     }
-}
+} 
 
 function updateCalendar() {
     const select = document.getElementById('month-select');
