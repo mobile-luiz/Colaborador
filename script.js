@@ -147,101 +147,40 @@ function showDashboard() {
         dataFormatada = hoje.toLocaleDateString('pt-BR');
     }
 
-    // Mostrar informações (LAYOUT SIMPLIFICADO)
+    // Layout único para desktop e mobile
     document.getElementById('data-area').innerHTML = `
-        <div class="info-item" 
-             style="grid-column: span 2; 
-                    text-align: center; 
-                    padding-bottom: 15px;">
-            <span style="color: #757575; 
-                         font-size: 0.9rem; 
-                         display: block; 
-                         margin-bottom: 5px;">
-                Colaborador
-            </span>
-            <strong style="font-size: 1.2rem; 
-                          color: #222; 
-                          display: block;">
-                ${colaboradorDataGlobal.nome}
-            </strong>
-        </div>
-        
-        <div class="info-item" 
-             style="background: #f8f9fa; 
-                    padding: 12px;
-                    border-radius: 8px;">
-            <span style="color: #666; 
-                         font-size: 0.8rem; 
-                         display: block;">
-                Matrícula
-            </span>
-            <strong style="color: #0056b3; 
-                          font-size: 1rem;">
-                ${colaboradorDataGlobal.matricula}
-            </strong>
-        </div>
-        
-        <div class="info-item" 
-             style="background: #f8f9fa; 
-                    padding: 12px;
-                    border-radius: 8px;">
-            <span style="color: #666; 
-                         font-size: 0.8rem; 
-                         display: block;">
-                Escala
-            </span>
-            <strong style="color: #28a745; 
-                          font-size: 1rem;">
-                Grupo ${escalaLetra}
-            </strong>
-        </div>
-        
-        <div class="info-item" 
-             style="grid-column: span 2; 
-                    background: #e8f5e9; 
-                    border: 2px solid #4caf50; 
-                    padding: 12px; 
-                    border-radius: 8px; 
-                    margin-top: 10px;">
-            <div style="display: flex; 
-                        justify-content: space-between; 
-                        align-items: center;">
-                <div>
-                    <span style="color: #2e7d32; 
-                                 font-size: 0.8rem; 
-                                 display: block;">
-                        Data da Consulta
-                    </span>
-                    <strong style="color: #2e7d32; 
-                                   font-size: 1.2rem;">
-                        ${dataFormatada}
-                    </strong>
+        <div class="dashboard-card">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <span class="avatar-initial">${nomeCurto.charAt(0)}</span>
                 </div>
-                <div style="background: #4caf50; 
-                            color: white; 
-                            padding: 4px 8px; 
-                            border-radius: 4px; 
-                            font-size: 0.8rem;">
-                    HOJE
+                <div class="user-info">
+                    <h2 class="user-name">${colaboradorDataGlobal.nome}</h2>
+                    <p class="user-matricula">Matrícula: <strong>${colaboradorDataGlobal.matricula}</strong></p>
                 </div>
             </div>
-        </div>
-        
-        <div class="info-item" 
-             style="grid-column: span 2; 
-                    background: #f8f9fa; 
-                    padding: 10px; 
-                    border-radius: 8px; 
-                    margin-top: 5px;">
-            <span style="color: #666; 
-                         font-size: 0.75rem; 
-                         display: block;">
-                Último acesso ao sistema
-            </span>
-            <strong style="color: #0056b3; 
-                          font-size: 0.9rem;">
-                ${colaboradorDataGlobal.ultimoAcesso ? colaboradorDataGlobal.ultimoAcesso : 'Primeiro acesso'}
-            </strong>
+            
+            <div class="dashboard-grid">
+                <div class="info-box escala-box">
+                    <div class="info-label">Escala</div>
+                    <div class="info-value escala-value">Grupo ${escalaLetra}</div>
+                </div>
+                
+                <div class="info-box consulta-box">
+                    <div class="consulta-content">
+                        <div class="info-label">Data da Consulta</div>
+                        <div class="info-value consulta-value">${dataFormatada}</div>
+                    </div>
+                    <div class="hoje-tag">HOJE</div>
+                </div>
+                
+                <div class="info-box acesso-box">
+                    <div class="info-label">Último acesso</div>
+                    <div class="info-value acesso-value">
+                        ${colaboradorDataGlobal.ultimoAcesso ? colaboradorDataGlobal.ultimoAcesso : 'Primeiro acesso'}
+                    </div>
+                </div>
+            </div>
         </div>
     `;
     
@@ -294,9 +233,8 @@ function updateCalendar() {
     }
     
     // Gerar cabeçalho
-    let html = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
-        .map(d => `<div class="day-name">${d}</div>`)
-        .join('');
+    const weekDays = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    let html = weekDays.map(d => `<div class="day-name">${d}</div>`).join('');
     
     // Dias vazios no início
     for (let i = 0; i < startingDayOfWeek; i++) {
@@ -331,10 +269,13 @@ function updateCalendar() {
             className += ' past-day';
         }
 
+        // Status text adaptado para tamanhos de tela
+        const statusText = window.innerWidth < 768 ? (isOff ? 'F' : 'T') : (isOff ? 'FOLGA' : 'TRAB');
+        
         html += `
             <div class="${className}">
-                <strong>${day}</strong>
-                <span class="day-status">${isOff ? 'FOLGA' : 'TRAB'}</span>
+                <div class="day-number">${day}</div>
+                <div class="day-status">${statusText}</div>
                 ${isHoje ? '<span class="hoje-badge">HOJE</span>' : ''}
             </div>
         `;
@@ -379,13 +320,200 @@ function downloadPDF() {
     });
 }
 
-// CSS adicional
+// CSS adicional - Layout único para todos os dispositivos
 const style = document.createElement('style');
 style.textContent = `
+    /* Layout do dashboard - Consistente para desktop e mobile */
+    .dashboard-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #f0f0f0;
+    }
+    
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .user-avatar {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .avatar-initial {
+        color: white;
+        font-size: 28px;
+        font-weight: 600;
+    }
+    
+    .user-info {
+        flex: 1;
+    }
+    
+    .user-name {
+        margin: 0 0 8px 0;
+        font-size: 1.4rem;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .user-matricula {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #666;
+    }
+    
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e9ecef;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .info-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .info-label {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 8px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+        font-size: 1.3rem;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .escala-box {
+        border-left: 4px solid #28a745;
+    }
+    
+    .escala-value {
+        color: #28a745;
+    }
+    
+    .consulta-box {
+        background: #e8f5e9 !important;
+        border: 2px solid #4caf50 !important;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .consulta-content {
+        flex: 1;
+    }
+    
+    .consulta-value {
+        color: #2e7d32;
+    }
+    
+    .hoje-tag {
+        background: #4caf50;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 15px;
+    }
+    
+    .acesso-box {
+        border-left: 4px solid #0056b3;
+    }
+    
+    .acesso-value {
+        color: #0056b3;
+        font-size: 1.1rem;
+    }
+    
+    /* Calendário - Responsivo */
+    .calendar-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #calendar-body {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
+        min-width: 300px;
+    }
+    
+    .day-name {
+        font-weight: 600;
+        text-align: center;
+        padding: 12px 6px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        color: #555;
+    }
+    
+    .day-cell {
+        position: relative;
+        padding: 10px 4px;
+        min-height: 70px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+    
+    .day-number {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .day-status {
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+    
+    /* Classes para folga (vermelho) e trabalho (verde) */
+    .folga {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+    
+    .trabalho {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+    
     .today {
-        background-color: #2c3e50ff !important;
+        background-color: #2c3e50 !important;
         border: 2px solid #ffc107 !important;
-        font-weight: bold;
+        color: white !important;
     }
     
     .past-day {
@@ -398,32 +526,155 @@ style.textContent = `
     
     .hoje-badge {
         position: absolute;
-        top: 2px;
-        right: 2px;
+        top: 4px;
+        right: 4px;
         background: #ffc107;
         color: #000;
         font-size: 0.6rem;
-        padding: 1px 4px;
-        border-radius: 3px;
+        padding: 2px 6px;
+        border-radius: 4px;
         font-weight: bold;
     }
     
-    .day-cell {
-        position: relative;
-        padding: 8px 4px;
+    /* Layout responsivo */
+    @media (min-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .day-cell {
+            min-height: 80px;
+        }
+        
+        .day-number {
+            font-size: 1.2rem;
+        }
+        
+        .day-status {
+            font-size: 0.85rem;
+        }
     }
     
-    /* Classes para folga (vermelho) e trabalho (verde) */
-    .folga {
-        background-color: #dc3545 !important;
-        color: white !important;
-        border-radius: 4px;
+    @media (max-width: 767px) {
+        .dashboard-card {
+            padding: 20px;
+            margin: 0 0 20px 0;
+        }
+        
+        .user-profile {
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .avatar-initial {
+            font-size: 24px;
+        }
+        
+        .user-name {
+            font-size: 1.2rem;
+        }
+        
+        .info-box {
+            padding: 16px;
+        }
+        
+        .info-value {
+            font-size: 1.1rem;
+        }
+        
+        .hoje-tag {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        
+        .day-cell {
+            min-height: 55px;
+            padding: 8px 3px;
+        }
+        
+        .day-number {
+            font-size: 0.95rem;
+        }
+        
+        .day-status {
+            font-size: 0.75rem;
+        }
     }
     
-    .trabalho {
-        background-color: #28a745 !important;
-        color: white !important;
-        border-radius: 4px;
+    @media (max-width: 480px) {
+        .dashboard-card {
+            padding: 16px;
+        }
+        
+        .user-profile {
+            flex-direction: column;
+            text-align: center;
+            gap: 12px;
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .avatar-initial {
+            font-size: 32px;
+        }
+        
+        .user-name {
+            font-size: 1.3rem;
+        }
+        
+        .day-cell {
+            min-height: 50px;
+        }
+        
+        .day-number {
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* Controles do calendário */
+    .calendar-controls {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    @media (max-width: 767px) {
+        .calendar-controls {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        #month-select, .btn {
+            width: 100%;
+        }
+    }
+    
+    /* Botões */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 `;
 document.head.appendChild(style);
@@ -431,4 +682,11 @@ document.head.appendChild(style);
 // Inicializar
 document.addEventListener('DOMContentLoaded', function() {
     populateMonthSelector();
+    
+    // Atualizar calendário quando a janela for redimensionada
+    window.addEventListener('resize', function() {
+        if (colaboradorDataGlobal.nome) {
+            updateCalendar();
+        }
+    });
 });
