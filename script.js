@@ -410,7 +410,7 @@ style.textContent = `
     }
     
     .escala-box {
-        border-left: 4px solid #28a745;
+        border-left: 4px solid #ffc107;
     }
     
     .escala-value {
@@ -418,8 +418,8 @@ style.textContent = `
     }
     
     .consulta-box {
-        background: #e8f5e9 !important;
-        border: 2px solid #4caf50 !important;
+        background: #fff8e1 !important;
+        border: 2px solid #ffc107 !important;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -430,12 +430,12 @@ style.textContent = `
     }
     
     .consulta-value {
-        color: #2e7d32;
+        color: #333;
     }
     
     .hoje-tag {
-        background: #4caf50;
-        color: white;
+        background: #ffc107;
+        color: #000;
         padding: 8px 16px;
         border-radius: 20px;
         font-size: 0.85rem;
@@ -444,7 +444,7 @@ style.textContent = `
     }
     
     .acesso-box {
-        border-left: 4px solid #0056b3;
+        border-left: 4px solid #ffc107;
     }
     
     .acesso-value {
@@ -499,7 +499,7 @@ style.textContent = `
         font-weight: 500;
     }
     
-    /* Classes para folga (vermelho) e trabalho (verde) */
+    /* DENTRO DO CALENDÁRIO: TRABALHO = VERDE, FOLGA = VERMELHO */
     .folga {
         background-color: #dc3545 !important;
         color: white !important;
@@ -510,9 +510,25 @@ style.textContent = `
         color: white !important;
     }
     
+    /* DIA ATUAL NO CALENDÁRIO: Mantém sua cor original + borda amarela */
     .today {
-        background-color: #2c3e50 !important;
-        border: 2px solid #ffc107 !important;
+        border: 3px solid #ffc107 !important;
+        box-shadow: 0 0 0 1px #ffc107;
+        position: relative;
+        z-index: 10;
+    }
+    
+    /* Se o dia atual for trabalho: verde + borda amarela */
+    .today.trabalho {
+        background-color: #28a745 !important;
+        border: 3px solid #ffc107 !important;
+        color: white !important;
+    }
+    
+    /* Se o dia atual for folga: vermelho + borda amarela */
+    .today.folga {
+        background-color: #dc3545 !important;
+        border: 3px solid #ffc107 !important;
         color: white !important;
     }
     
@@ -524,6 +540,7 @@ style.textContent = `
         background-color: white;
     }
     
+    /* BADGE HOJE NO CALENDÁRIO: Amarelo */
     .hoje-badge {
         position: absolute;
         top: 4px;
@@ -534,6 +551,12 @@ style.textContent = `
         padding: 2px 6px;
         border-radius: 4px;
         font-weight: bold;
+        z-index: 20;
+    }
+    
+    /* Barras amarelas nos cards (fora do calendário) */
+    .escala-box, .acesso-box {
+        border-left: 4px solid #ffc107;
     }
     
     /* Layout responsivo */
