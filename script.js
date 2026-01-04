@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzDiP9o5huC1vXIoyu-10WISKYsWpwDsOO9TEDJKQXiNSYCELqb87ogjfFzJoY_kDCa/exec"; 
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5Xwuwf7TpAGM_KwMmorQSvPO63iuftpr-HQ3MQryNBgoQ_QfbzXkmPmcf7Tpbk_kt/exec"; 
 
 const mainContainer = document.getElementById('main-container');
 const loginArea = document.getElementById('login-area');
@@ -140,6 +140,7 @@ function showDashboard() {
     // Obter dados do colaborador
     let dataFormatada = colaboradorDataGlobal.dataReferencia || '';
     const escalaLetra = (colaboradorDataGlobal.escalaLetra || "").toUpperCase();
+    const turno = colaboradorDataGlobal.turno || "Não informado";
     
     // Se não tiver data formatada, usar data atual
     if (!dataFormatada) {
@@ -157,13 +158,14 @@ function showDashboard() {
                 <div class="user-info">
                     <h2 class="user-name">${colaboradorDataGlobal.nome}</h2>
                     <p class="user-matricula">Matrícula: <strong>${colaboradorDataGlobal.matricula}</strong></p>
+                    <p class="user-turno">Turno Atual: <strong class="turno-badge ${getTurnoClass(turno)}">${turno}</strong></p>
                 </div>
             </div>
             
             <div class="dashboard-grid">
                 <div class="info-box escala-box">
-                    <div class="info-label">Escala</div>
-                    <div class="info-value escala-value">Grupo ${escalaLetra}</div>
+                    <div class="info-label">Grupo da Escala</div>
+                    <div class="info-value escala-value">${escalaLetra}</div>
                 </div>
                 
                 <div class="info-box consulta-box">
@@ -186,6 +188,14 @@ function showDashboard() {
     
     populateMonthSelector();
     updateCalendar();
+}
+
+// Função auxiliar para definir classes CSS baseadas no turno
+function getTurnoClass(turno) {
+    if (turno.includes('T1')) return 'turno-t1';
+    if (turno.includes('T2')) return 'turno-t2';
+    if (turno.includes('T3')) return 'turno-t3';
+    return '';
 }
 
 function populateMonthSelector() {
