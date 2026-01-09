@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbydBdEQDMheomKBPmGI6NIETvmd2-q2uu6wZpp-ce1uKvFDfFbN5mHjthZhDQJz3bqC/exec"; 
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw7FKoSRb55rhS7V_s9xUcXzWpyDEhjnDxIardNGUoge1WOGgIBsqGWKF3TpyldEk3u/exec"; 
 
 // Elementos DOM
 const mainContainer = document.getElementById('main-container');
@@ -408,104 +408,70 @@ function showDashboard() {
     const nomeCurto = user.nome.split(' ')[0];
     const matricula = user.matricula || "---";
     const turno = user.turno || "Não informado";
-    const escalaLetra = (user.escalaLetra || "A").toUpperCase();
+
+    // CORREÇÃO AQUI: Removemos o "A" obrigatório. 
+    // Se for vazio, nulo ou um traço "-", mostra "Não informado"
+    const escalaLetra = (user.escalaLetra && user.escalaLetra !== "-" && user.escalaLetra !== "") 
+                        ? user.escalaLetra.toUpperCase() 
+                        : "Não informado";
     
     let ultimoAcesso = user.ultimoAcesso || 'Primeiro acesso';
     
-    // ============================================================
-    // INÍCIO DA SEÇÃO: STATUS DE HOJE (SINCRONIA COM CALENDÁRIO)
-    // ============================================================
-    // Define os valores padrão caso os dados não sejam encontrados
+    // Lógica do Status de Hoje
     let statusTextoExibicao = "NÃO INFORMADO";
     let classeIcone = "indefinido"; 
     let simboloIcone = "?";
 
-    // Verifica se existe o objeto de escala para o dia atual (hoje)
     if (user.minhaEscala6x2 && user.minhaEscala6x2.hoje) {
         const hojeObj = user.minhaEscala6x2.hoje;
-        
-        // Extrai o conteúdo da Coluna F da planilha (pode ser "7:50:00", "Folga", "#N/A", etc.)
         const valorBruto = hojeObj.status ? hojeObj.status.toString().trim() : "";
 
-        // TRATAMENTO DE ERRO/VAZIO: Se a planilha estiver com #N/A ou em branco
-        if (valorBruto === "" || valorBruto === "#N/A") {
-            statusTextoExibicao = "SEM DADOS"; // Texto que aparece no card
-            classeIcone = "indefinido";       // Define a cor cinza no CSS
-            simboloIcone = "?";               // Ícone de alerta
-        } 
-        // TRATAMENTO DE DADOS REAIS: Se houver conteúdo válido na célula
-        else {
-            statusTextoExibicao = valorBruto; // Exibe o horário ou texto exato da planilha
-            
-            // Define a cor e o símbolo (Check ou X) baseando-se na lógica de folga
-            if (hojeObj.isFolga) {
-                classeIcone = "folga";    // Cor vermelha
-                simboloIcone = "✕";
-            } else {
-                classeIcone = "trabalho"; // Cor verde
-                simboloIcone = "✓";
-            }
-        }
-    }
-    // ============================================================
-    // FIM DA SEÇÃO: STATUS DE HOJE
-    // ============================================================
-
-    const welcomeDiv = document.getElementById('welcome-message');
-    if (welcomeDiv) {
-        const containerWelcome = welcomeDiv.closest('.header-welcome') || welcomeDiv.parentElement;
-        if (containerWelcome) {
-             containerWelcome.innerHTML = `
-                <h1>Olá, ${nomeCurto}!</h1>
-                <small>Bem-vindo ao seu painel exclusivo.</small>
-             `;
-             containerWelcome.className = 'header-welcome';
+        if (valorBruto === "" || valorBruto === "#N/A" || valorBruto === "Não informado") {
+            statusTextoExibicao = "SEM DADOS";
+            classeIcone = "indefinido";
+            simboloIcone = "?";
+        } else {
+            statusTextoExibicao = valorBruto;
+            classeIcone = hojeObj.isFolga ? "folga" : "trabalho";
+            simboloIcone = hojeObj.isFolga ? "✕" : "✓";
         }
     }
 
+    // Renderização do HTML
     document.getElementById('data-area').innerHTML = `
         <div class="dashboard-card">
             <div class="user-profile">
-                <div class="user-avatar">
-                    <span>${nomeCurto.charAt(0)}</span>
-                </div>
+                <div class="user-avatar"><span>${nomeCurto.charAt(0)}</span></div>
                 <div class="user-info">
                     <h2 class="user-name">${user.nome}</h2>
                     <p>Matrícula: <strong>${matricula}</strong></p>
                     <p>Turno: <strong>${turno}</strong></p>
                 </div>
             </div>
-            
             <div class="dashboard-grid">
-                
                 <div class="info-box">
                     <div class="info-label">GRUPO</div>
-                    <div class="escala-value">${escalaLetra}</div>
+                    <div class="escala-value" style="font-size: ${escalaLetra.length > 1 ? '16px' : '24px'}">
+                        ${escalaLetra}
+                    </div>
                 </div>
-                
                 <div class="info-box highlight-box">
                     <div class="info-label">STATUS HOJE</div>
-                    <div class="hoje-badge">AGORA</div>
-                    
                     <div class="status-display">
-                        <div class="status-icon ${classeIcone}">
-                            ${simboloIcone}
-                        </div>
+                        <div class="status-icon ${classeIcone}">${simboloIcone}</div>
                         <div class="status-text">${statusTextoExibicao}</div>
                     </div>
                 </div>
-                
                 <div class="info-box">
                     <div class="info-label">ÚLTIMO ACESSO</div>
                     <div class="acesso-value">${ultimoAcesso}</div>
                 </div>
-
             </div>
         </div>
     `;
     
-    populateMonthSelector();
-    updateCalendar();
+    if (typeof populateMonthSelector === "function") populateMonthSelector();
+    if (typeof updateCalendar === "function") updateCalendar();
 }
 
 
