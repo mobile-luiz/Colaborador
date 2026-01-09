@@ -711,59 +711,60 @@ function logout() { location.reload(); }
 async function downloadPDF() {
     const btn = document.querySelector('button[onclick="downloadPDF()"]');
     if (!btn || !window.jspdf || !html2canvas) {
-        alert('As bibliotecas de PDF ainda estão a carregar...');
+        alert('Bibliotecas PDF não carregadas. Aguarde um momento e tente novamente.');
         return;
     }
 
-    btn.textContent = "A Gerar...";
+    btn.textContent = "Gerando...";
     btn.disabled = true;
 
     const element = document.getElementById('main-container');
     
-    // 1. Ativar modo de impressão e salvar estado original
-    element.classList.add('is-printing');
+    // --- TRUQUE PARA MANTER O LAYOUT DESKTOP NO MOBILE ---
     const originalWidth = element.style.width;
-    const originalMinWidth = element.style.minWidth;
-
-    // 2. Forçar largura de Desktop (Computador)
-    element.style.width = '1200px';
-    element.style.minWidth = '1200px';
-
-    // Aguarda o navegador aplicar o novo layout (300ms a 500ms)
-    await new Promise(resolve => setTimeout(resolve, 400));
+    const originalMaxWidth = element.style.maxWidth;
+    
+    // Forçamos uma largura de Desktop para o print
+    element.style.width = '1200px'; 
+    element.style.maxWidth = 'none';
+    
+    // Adicionamos uma pequena espera para o navegador processar o novo layout
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     const opt = { 
         scale: 2, 
         useCORS: true,
-        windowWidth: 1200, // Simula janela de computador 
-        logging: false
+        logging: false,
+        windowWidth: 1200 // Garante que o media query de desktop seja ativado
     };
 
-    try {
-        const canvas = await html2canvas(element, opt);
+    html2canvas(element, opt).then(canvas => {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgData = canvas.toDataURL('image/png');
         
-        const pdfWidth = pdf.internal.pageSize.getWidth() - 10;
+        const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        pdf.addImage(imgData, 'PNG', 5, 5, pdfWidth, pdfHeight);
+        pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
         pdf.save(`Escala_${colaboradorDataGlobal.nome || 'Colaborador'}.pdf`);
-    } catch (err) {
-        console.error('Erro ao gerar PDF:', err);
-    } finally {
-        // 3. Restaurar layout original para o telemóvel do utilizador
-        element.classList.remove('is-printing');
+
+        // Restauramos o layout original após o download
         element.style.width = originalWidth;
-        element.style.minWidth = originalMinWidth;
+        element.style.maxWidth = originalMaxWidth;
         
         btn.textContent = "💾 Baixar PDF";
         btn.disabled = false;
-        
-        // Garante que o calendário volta ao tamanho normal de visualização
-        updateCalendar();
-    }
+    }).catch(err => {
+        console.error('Erro ao gerar PDF:', err);
+        element.style.width = originalWidth;
+        element.style.maxWidth = originalMaxWidth;
+        btn.textContent = "❌ Erro";
+        setTimeout(() => {
+            btn.textContent = "💾 Baixar PDF";
+            btn.disabled = false;
+        }, 2000);
+    });
 }
 // ==========================================
 // INICIALIZAÇÃO
