@@ -1,4 +1,4 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzHJP26EbK0kNcxgdrUMIq0wNkDBaxBvsbjB5WwqR29k9n-LQVnN2AS0fMyPQNdjwks/exec"; 
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyDz_P5YpnZlOae2wrxMMZQQPf3i9l6Gb64dD4bUl7dFsg0BbCD8fxfB_A0DecuvCnU/exec"; 
 
 // Elementos DOM
 const mainContainer = document.getElementById('main-container');
@@ -399,45 +399,48 @@ function updateCalendar() {
     document.getElementById('calendar-body').innerHTML = html;
 }
 
+
 function showDashboard() {
     loginArea.style.display = 'none';
     dashboardArea.style.display = 'block';
     mainContainer.classList.add('dashboard-mode');
     
     const user = colaboradorDataGlobal;
-    const nomeCurto = user.nome.split(' ')[0];
+    const nomeCurto = user.nome ? user.nome.split(' ')[0] : "Usuário";
     const matricula = user.matricula || "---";
     const turno = user.turno || "Não informado";
-
-    // CORREÇÃO AQUI: Removemos o "A" obrigatório. 
-    // Se for vazio, nulo ou um traço "-", mostra "Não informado"
     const escalaLetra = (user.escalaLetra && user.escalaLetra !== "-" && user.escalaLetra !== "") 
                         ? user.escalaLetra.toUpperCase() 
                         : "Não informado";
     
     let ultimoAcesso = user.ultimoAcesso || 'Primeiro acesso';
     
-    // Lógica do Status de Hoje
-    let statusTextoExibicao = "NÃO INFORMADO";
-    let classeIcone = "indefinido"; 
+    // --- LÓGICA DE STATUS HOJE (Sincronizada com o Calendário) ---
+    const hojeData = new Date();
+    hojeData.setHours(0, 0, 0, 0);
+    
+    const statusHoje = obterStatusDia(escalaLetra, hojeData);
+    
+    let statusTextoExibicao = "SEM DADOS";
+    let classeStatus = "indefinido"; 
+    let classeIcone = "indefinido";  
     let simboloIcone = "?";
 
-    if (user.minhaEscala6x2 && user.minhaEscala6x2.hoje) {
-        const hojeObj = user.minhaEscala6x2.hoje;
-        const valorBruto = hojeObj.status ? hojeObj.status.toString().trim() : "";
-
-        if (valorBruto === "" || valorBruto === "#N/A" || valorBruto === "Não informado") {
-            statusTextoExibicao = "SEM DADOS";
-            classeIcone = "indefinido";
-            simboloIcone = "?";
-        } else {
-            statusTextoExibicao = valorBruto;
-            classeIcone = hojeObj.isFolga ? "folga" : "trabalho";
-            simboloIcone = hojeObj.isFolga ? "✕" : "✓";
+    if (statusHoje) {
+        if (statusHoje.isTrabalho) {
+            statusTextoExibicao = "TRABALHA";
+            classeStatus = "status-trabalha";
+            classeIcone = "trabalho";
+            simboloIcone = "✓";
+        } else if (statusHoje.isFolga) {
+            statusTextoExibicao = "FOLGA";
+            classeStatus = "status-folga";
+            classeIcone = "folga";
+            simboloIcone = "✕";
         }
     }
 
-    // Renderização do HTML
+    // --- RENDERIZAÇÃO DO HTML (Incluindo Perfil e Grid) ---
     document.getElementById('data-area').innerHTML = `
         <div class="dashboard-card">
             <div class="user-profile">
@@ -448,6 +451,7 @@ function showDashboard() {
                     <p>Turno: <strong>${turno}</strong></p>
                 </div>
             </div>
+
             <div class="dashboard-grid">
                 <div class="info-box">
                     <div class="info-label">GRUPO</div>
@@ -459,7 +463,7 @@ function showDashboard() {
                     <div class="info-label">STATUS HOJE</div>
                     <div class="status-display">
                         <div class="status-icon ${classeIcone}">${simboloIcone}</div>
-                        <div class="status-text">${statusTextoExibicao}</div>
+                        <div class="status-text ${classeStatus}">${statusTextoExibicao}</div>
                     </div>
                 </div>
                 <div class="info-box">
@@ -473,7 +477,6 @@ function showDashboard() {
     if (typeof populateMonthSelector === "function") populateMonthSelector();
     if (typeof updateCalendar === "function") updateCalendar();
 }
-
 
 // CSS DASHBOARD COMPLETO - CORES REAIS
 // ==========================================
