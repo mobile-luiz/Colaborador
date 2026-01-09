@@ -412,22 +412,44 @@ function showDashboard() {
     
     let ultimoAcesso = user.ultimoAcesso || 'Primeiro acesso';
     
-    let statusHoje = "INDEFINIDO";
-    let isFolga = false;
+    // ============================================================
+    // INÍCIO DA SEÇÃO: STATUS DE HOJE (SINCRONIA COM CALENDÁRIO)
+    // ============================================================
+    // Define os valores padrão caso os dados não sejam encontrados
+    let statusTextoExibicao = "NÃO INFORMADO";
+    let classeIcone = "indefinido"; 
+    let simboloIcone = "?";
 
+    // Verifica se existe o objeto de escala para o dia atual (hoje)
     if (user.minhaEscala6x2 && user.minhaEscala6x2.hoje) {
         const hojeObj = user.minhaEscala6x2.hoje;
-        if (hojeObj.isFolga) {
-            statusHoje = "FOLGA";
-            isFolga = true;
-        } else if (hojeObj.isTrabalho) {
-            statusHoje = "TRABALHA";
-        } else {
-            statusHoje = getStatusText(hojeObj);
+        
+        // Extrai o conteúdo da Coluna F da planilha (pode ser "7:50:00", "Folga", "#N/A", etc.)
+        const valorBruto = hojeObj.status ? hojeObj.status.toString().trim() : "";
+
+        // TRATAMENTO DE ERRO/VAZIO: Se a planilha estiver com #N/A ou em branco
+        if (valorBruto === "" || valorBruto === "#N/A") {
+            statusTextoExibicao = "SEM DADOS"; // Texto que aparece no card
+            classeIcone = "indefinido";       // Define a cor cinza no CSS
+            simboloIcone = "?";               // Ícone de alerta
+        } 
+        // TRATAMENTO DE DADOS REAIS: Se houver conteúdo válido na célula
+        else {
+            statusTextoExibicao = valorBruto; // Exibe o horário ou texto exato da planilha
+            
+            // Define a cor e o símbolo (Check ou X) baseando-se na lógica de folga
+            if (hojeObj.isFolga) {
+                classeIcone = "folga";    // Cor vermelha
+                simboloIcone = "✕";
+            } else {
+                classeIcone = "trabalho"; // Cor verde
+                simboloIcone = "✓";
+            }
         }
-    } else {
-        statusHoje = "TRABALHA";
     }
+    // ============================================================
+    // FIM DA SEÇÃO: STATUS DE HOJE
+    // ============================================================
 
     const welcomeDiv = document.getElementById('welcome-message');
     if (welcomeDiv) {
@@ -466,10 +488,10 @@ function showDashboard() {
                     <div class="hoje-badge">AGORA</div>
                     
                     <div class="status-display">
-                        <div class="status-icon ${isFolga ? 'folga' : 'trabalho'}">
-                            ${isFolga ? '✕' : '✓'}
+                        <div class="status-icon ${classeIcone}">
+                            ${simboloIcone}
                         </div>
-                        <div class="status-text">${statusHoje}</div>
+                        <div class="status-text">${statusTextoExibicao}</div>
                     </div>
                 </div>
                 
@@ -650,8 +672,12 @@ premiumStyle.textContent = `
         .day-number { font-size: 0.9rem; }
         .day-status { font-size: 0.5rem; }
     }
+        
 `;
-document.head.appendChild(premiumStyle);
+
+
+
+
 
 
 // Remover estilo anterior se existir
@@ -716,43 +742,63 @@ document.getElementById('login-form').addEventListener('submit', async function(
 
 function logout() { location.reload(); }
 
-function downloadPDF() {
+async function downloadPDF() {
     const btn = document.querySelector('button[onclick="downloadPDF()"]');
     if (!btn || !window.jspdf || !html2canvas) {
-        alert('Bibliotecas PDF não carregadas. Aguarde um momento e tente novamente.');
+        alert('As bibliotecas de PDF ainda estão a carregar...');
         return;
     }
-    
-    btn.textContent = "Gerando...";
+
+    btn.textContent = "A Gerar...";
     btn.disabled = true;
-    
+
     const element = document.getElementById('main-container');
-    const opt = { scale: 2, useCORS: true };
     
-    html2canvas(element, opt).then(canvas => {
+    // 1. Ativar modo de impressão e salvar estado original
+    element.classList.add('is-printing');
+    const originalWidth = element.style.width;
+    const originalMinWidth = element.style.minWidth;
+
+    // 2. Forçar largura de Desktop (Computador)
+    element.style.width = '1200px';
+    element.style.minWidth = '1200px';
+
+    // Aguarda o navegador aplicar o novo layout (300ms a 500ms)
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const opt = { 
+        scale: 2, 
+        useCORS: true,
+        windowWidth: 1200, // Simula janela de computador 
+        logging: false
+    };
+
+    try {
+        const canvas = await html2canvas(element, opt);
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgData = canvas.toDataURL('image/png');
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
         
-        pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+        const pdfWidth = pdf.internal.pageSize.getWidth() - 10;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', 5, 5, pdfWidth, pdfHeight);
         pdf.save(`Escala_${colaboradorDataGlobal.nome || 'Colaborador'}.pdf`);
+    } catch (err) {
+        console.error('Erro ao gerar PDF:', err);
+    } finally {
+        // 3. Restaurar layout original para o telemóvel do utilizador
+        element.classList.remove('is-printing');
+        element.style.width = originalWidth;
+        element.style.minWidth = originalMinWidth;
         
         btn.textContent = "💾 Baixar PDF";
         btn.disabled = false;
-    }).catch(err => {
-        console.error('Erro ao gerar PDF:', err);
-        btn.textContent = "❌ Erro";
-        btn.disabled = false;
-        setTimeout(() => {
-            btn.textContent = "💾 Baixar PDF";
-            btn.disabled = false;
-        }, 2000);
-    });
+        
+        // Garante que o calendário volta ao tamanho normal de visualização
+        updateCalendar();
+    }
 }
-
 // ==========================================
 // INICIALIZAÇÃO
 // ==========================================
