@@ -568,13 +568,17 @@ premiumStyle.textContent = `
         gap: 8px;
     }
 
-    .day-name {
+   .day-name {
         text-align: center;
-        padding: 10px 0;
-        font-weight: 800;
-        color: #636e72;
-        font-size: 0.75rem;
+        padding: 12px 0;
+        font-weight: 900; /* Peso máximo para a fonte */
+        color: #1a1a1a;   /* Cor quase preta para máximo contraste */
+        font-size: 0.85rem; /* Aumentado um pouco o tamanho */
         text-transform: uppercase;
+        background-color: #f1f2f6; /* Um fundo leve para separar do cabeçalho */
+        border-radius: 6px;
+        margin-bottom: 5px;
+        letter-spacing: 0.5px;
     }
 
     .day-cell {
@@ -709,12 +713,16 @@ document.getElementById('login-form').addEventListener('submit', async function(
     }
 });
 
+
 function logout() { location.reload(); }
+
+
+
 
 async function downloadPDF() {
     const btn = document.querySelector('button[onclick="downloadPDF()"]');
     if (!btn || !window.jspdf || !html2canvas) {
-        alert('Bibliotecas PDF não carregadas. Aguarde um momento e tente novamente.');
+        alert('Bibliotecas PDF não carregadas.');
         return;
     }
 
@@ -722,51 +730,60 @@ async function downloadPDF() {
     btn.disabled = true;
 
     const element = document.getElementById('main-container');
-    
-    // --- TRUQUE PARA MANTER O LAYOUT DESKTOP NO MOBILE ---
-    const originalWidth = element.style.width;
-    const originalMaxWidth = element.style.maxWidth;
-    
-    // Forçamos uma largura de Desktop para o print
-    element.style.width = '1200px'; 
+    const originalStyle = element.getAttribute('style');
+
+    // 1. Forçamos uma largura que caiba bem no A4 sem compressão excessiva
+    element.style.width = '800px'; 
     element.style.maxWidth = 'none';
-    
-    // Adicionamos uma pequena espera para o navegador processar o novo layout
-    await new Promise(resolve => setTimeout(resolve, 300));
+    element.style.background = '#ffffff';
+
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const opt = { 
-        scale: 2, 
+        scale: 2, // Resolução boa sem criar um arquivo pesado demais
         useCORS: true,
         logging: false,
-        windowWidth: 1200 // Garante que o media query de desktop seja ativado
+        windowWidth: 800
     };
 
     html2canvas(element, opt).then(canvas => {
         const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgData = canvas.toDataURL('image/png');
         
-        const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        // 2. Pegamos as dimensões da imagem gerada
+        const imgData = canvas.toDataURL('image/png');
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
 
-        pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth, pdfHeight);
+        // 3. Criamos o PDF com base no tamanho do conteúdo para evitar cortes
+        // Se a altura for maior que a largura, usamos 'p' (retrato), senão 'l' (paisagem)
+        const orientation = canvasHeight > canvasWidth ? 'p' : 'l';
+        const pdf = new jsPDF(orientation, 'mm', 'a4');
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // 4. Ajustamos a imagem para ocupar a largura da página com margens pequenas
+        const margin = 10;
+        const imgWidth = pageWidth - (margin * 2);
+        const imgHeight = (canvasHeight * imgWidth) / canvasWidth;
+
+        // 5. Verificação de quebra: se a imagem for maior que a página, 
+        // o jsPDF permite adicionar a imagem, mas aqui garantimos o ajuste
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+        
         pdf.save(`Escala_${colaboradorDataGlobal.nome || 'Colaborador'}.pdf`);
 
-        // Restauramos o layout original após o download
-        element.style.width = originalWidth;
-        element.style.maxWidth = originalMaxWidth;
-        
+        // Restaurar layout
+        if (originalStyle) element.setAttribute('style', originalStyle);
+        else element.removeAttribute('style');
+
         btn.textContent = "💾 Baixar PDF";
         btn.disabled = false;
     }).catch(err => {
-        console.error('Erro ao gerar PDF:', err);
-        element.style.width = originalWidth;
-        element.style.maxWidth = originalMaxWidth;
+        console.error(err);
         btn.textContent = "❌ Erro";
-        setTimeout(() => {
-            btn.textContent = "💾 Baixar PDF";
-            btn.disabled = false;
-        }, 2000);
+        if (originalStyle) element.setAttribute('style', originalStyle);
+        setTimeout(() => { btn.textContent = "💾 Baixar PDF"; btn.disabled = false; }, 2000);
     });
 }
 // ==========================================
